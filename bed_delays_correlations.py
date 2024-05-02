@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+from scipy import stats
 from sqlalchemy import create_engine
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
@@ -34,7 +35,8 @@ df = pd.read_sql(query, cl3_engine)
 #Close the connection
 cl3_engine.dispose()
 
-#Remove erroneous negatives
+#Remove outlier time to management plan and erroneous negatives
+df = df.loc[(np.abs(stats.zscore(df['MeanTimeToManagementPlan'])) < 3)]
 df = df.loc[(df[['BedDelayMins', 'FourHourPerf', 'MeanTimeInDept', 'MeanTimetoTriage', 'MeanTimetoTreatment',
                  'MeanTimeToManagementPlan', 'MeanTimetoCRtP']] > 0).all(axis=1)]
 
@@ -77,9 +79,9 @@ def model_fit_and_plot(df, y_column, y_name, mod_degree):
     plt.ylabel(y_name)
     plt.savefig(title + '.png')
 
-model_fit_and_plot(df, 'FourHourPerf', 'Four Hour Performance', 2)
-model_fit_and_plot(df, 'MeanTimeInDept', 'Mean Time in Department', 1)
-model_fit_and_plot(df, 'MeanTimetoTriage', 'Mean Time to Triage', 2)
-model_fit_and_plot(df, 'MeanTimetoTreatment', 'Mean Time to Treatment', 2)
+model_fit_and_plot(df, 'FourHourPerf', 'Four Hour Performance', 3)
+model_fit_and_plot(df, 'MeanTimeInDept', 'Mean Time in Department', 2)
+model_fit_and_plot(df, 'MeanTimetoTriage', 'Mean Time to Triage', 3)
+model_fit_and_plot(df, 'MeanTimetoTreatment', 'Mean Time to Treatment', 1)
 model_fit_and_plot(df, 'MeanTimeToManagementPlan', 'Mean Time to Management Plan', 1)
-model_fit_and_plot(df, 'MeanTimetoCRtP', 'Mean Time to CRtP', 2)
+model_fit_and_plot(df, 'MeanTimetoCRtP', 'Mean Time to CRtP', 1)
