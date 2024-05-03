@@ -42,9 +42,12 @@ df = df.loc[(df[['BedDelayMins', 'FourHourPerf', 'MeanTimeInDept', 'MeanTimetoTr
 
 #Correalton heatmap
 cor_mat = df[['BedDelayMins', 'FourHourPerf', 'MeanTimeInDept', 'MeanTimetoTriage', 'MeanTimetoTreatment',
-              'MeanTimeToManagementPlan', 'MeanTimetoCRtP']].corr()
-sns.heatmap(cor_mat)
-plt.show()
+              'MeanTimeToManagementPlan', 'MeanTimetoCRtP']].corr(method='pearson')
+fig, ax = plt.subplots(figsize=(25,10))
+sns.heatmap(cor_mat, robust=True, annot=True, fmt='.2f', square=True, ax=ax)
+plt.title('Pearson Coefficients')
+plt.savefig('Correlation Matrix.png', bbox_inches='tight')
+
 
 #Function to fit a line of best fit to each relationship and save the plot
 def model_fit_and_plot(df, y_column, y_name, mod_degree):
