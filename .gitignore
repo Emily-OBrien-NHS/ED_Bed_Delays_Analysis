@@ -6,3 +6,6 @@
 
 # any csv files
 *.csv
+
+# any word files
+*.docx
