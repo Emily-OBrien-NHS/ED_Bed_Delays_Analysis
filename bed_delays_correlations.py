@@ -36,9 +36,14 @@ df = pd.read_sql(query, cl3_engine)
 cl3_engine.dispose()
 
 #Remove outlier time to management plan and erroneous negatives
+value_cols = ['BedDelayMins', 'FourHourPerf', 'MeanTimeInDept', 'MeanTimetoTriage', 'MeanTimetoTreatment',
+                 'MeanTimeToManagementPlan', 'MeanTimetoCRtP']
+
 df = df.loc[(np.abs(stats.zscore(df['MeanTimeToManagementPlan'])) < 3)]
-df = df.loc[(df[['BedDelayMins', 'FourHourPerf', 'MeanTimeInDept', 'MeanTimetoTriage', 'MeanTimetoTreatment',
-                 'MeanTimeToManagementPlan', 'MeanTimetoCRtP']] > 0).all(axis=1)]
+df = df.loc[(df[value_cols] > 0).all(axis=1)]
+
+norm_df = df.copy()
+norm_df[value_cols] = (norm_df[value_cols] - norm_df[value_cols].min()) / (norm_df[value_cols].max() - norm_df[value_cols].min())
 
 #Correalton heatmap
 cor_mat = df[['BedDelayMins', 'FourHourPerf', 'MeanTimeInDept', 'MeanTimetoTriage', 'MeanTimetoTreatment',
@@ -48,11 +53,17 @@ sns.heatmap(cor_mat, robust=True, annot=True, fmt='.2f', square=True, ax=ax)
 plt.title('Pearson Coefficients')
 plt.savefig('Correlation Matrix.png', bbox_inches='tight')
 
+norm_cor_mat = df[['BedDelayMins', 'FourHourPerf', 'MeanTimeInDept', 'MeanTimetoTriage', 'MeanTimetoTreatment',
+              'MeanTimeToManagementPlan', 'MeanTimetoCRtP']].corr(method='pearson')
+fig, ax = plt.subplots(figsize=(25,10))
+sns.heatmap(norm_cor_mat, robust=True, annot=True, fmt='.2f', square=True, ax=ax)
+plt.title('Normalised Pearson Coefficients')
+plt.savefig('Normalised Correlation Matrix.png', bbox_inches='tight')
 
 #Function to fit a line of best fit to each relationship and save the plot
-def model_fit_and_plot(df, y_column, y_name, mod_degree):
+def model_fit_and_plot(df, x_column, x_name, y_column, y_name, mod_degree):
     #Define x and y data
-    x = df['BedDelayMins']
+    x = df[x_column]
     x_plot = np.linspace(min(x), max(x), 1000)
     y = df[y_column]
     #If degree is higher than 1, then will require polynomial transform
@@ -73,18 +84,22 @@ def model_fit_and_plot(df, y_column, y_name, mod_degree):
     #Create the y_plot data
     y_plot = model.predict(x_plot_trans)
     #Create and save the plot
-    title = 'Bed Delay against ' + y_name
+    title = x_name + ' against ' + y_name
     plt.figure()
     plt.title(title)
     plt.scatter(x, y)
     plt.plot(x_plot, y_plot, c='red')
-    plt.xlabel('Bed Delay (mins)')
+    plt.xlabel(x_name)
     plt.ylabel(y_name)
     plt.savefig(title + '.png')
 
-model_fit_and_plot(df, 'FourHourPerf', 'Four Hour Performance', 3)
-model_fit_and_plot(df, 'MeanTimeInDept', 'Mean Time in Department', 2)
-model_fit_and_plot(df, 'MeanTimetoTriage', 'Mean Time to Triage', 3)
-model_fit_and_plot(df, 'MeanTimetoTreatment', 'Mean Time to Treatment', 1)
-model_fit_and_plot(df, 'MeanTimeToManagementPlan', 'Mean Time to Management Plan', 1)
-model_fit_and_plot(df, 'MeanTimetoCRtP', 'Mean Time to CRtP', 1)
+model_fit_and_plot(df, 'BedDelayMins', 'Bed Delay (mins)', 'FourHourPerf', 'Four Hour Performance', 3)
+model_fit_and_plot(df, 'BedDelayMins', 'Bed Delay (mins)', 'MeanTimeInDept', 'Mean Time in Department', 2)
+model_fit_and_plot(df, 'BedDelayMins', 'Bed Delay (mins)', 'MeanTimetoTriage', 'Mean Time to Triage', 2)
+model_fit_and_plot(df, 'BedDelayMins', 'Bed Delay (mins)', 'MeanTimetoTreatment', 'Mean Time to Treatment', 1)
+model_fit_and_plot(df, 'BedDelayMins', 'Bed Delay (mins)', 'MeanTimeToManagementPlan', 'Mean Time to Management Plan', 1)
+model_fit_and_plot(df, 'BedDelayMins', 'Bed Delay (mins)', 'MeanTimetoCRtP', 'Mean Time to CRtP', 1)
+
+model_fit_and_plot(df, 'MeanTimetoTreatment', 'Mean Time to Treatment', 'MeanTimeToManagementPlan', 'Mean Time to Management Plan', 1)
+model_fit_and_plot(df, 'MeanTimetoCRtP', 'Mean Time to CRtp', 'MeanTimeToManagementPlan', 'Mean Time to Management Plan', 1)
+model_fit_and_plot(df, 'MeanTimetoCRtP', 'Mean Time to CRtp', 'MeanTimetoTreatment', 'Mean Time to Treatment', 1)
